@@ -1,124 +1,178 @@
-Player player;
-ArrayList<Enemy> enemies;
-ArrayList<Attack> playerAttacks;
-ArrayList<Attack> enemyAttacks;
-ArrayList<TA> tas;
-Stage stage;
-UI ui;
-Mainmenu mainmenu;
-Gameover gameover;
-GameClear gameclear;
+final int WIDTH = 600;
+final int HEIGHT = 400;
 
-String scene = "menu";  // "menu", "game", "clear", "over"
-int difficulty = 1;     // 1: 学部卒, 2: 修士卒, 3: 博士卒
+String scene = "menu";
+int difficulty = 1;
+int stage = 1;
+
+Player player;
+Enemy prof;
+PImage taImg;
+PImage mainBullImg;
+
+ArrayList<TA> taList = new ArrayList<>();
+
+int lives = 3;
+int timeLimit = 60 * 30;
+int timer;
+
+MainMenu mainMenu;
+
+void settings() {
+  size(WIDTH, HEIGHT);
+}
 
 void setup() {
-  size(800, 600);
-  mainmenu = new Mainmenu();
-  gameover = new Gameover();
-  gameclear = new GameClear();
-  ui = new UI();
-  frameRate(60);
+  size(WIDTH, HEIGHT);
+  taImg = loadImage("TA.png");
+  mainBullImg = loadImage("main_bull.png");
+  PFont font = createFont("Meiryo", 20);
+  textFont(font);
+
+  player = new Player(WIDTH/2, HEIGHT - 50);
+  mainMenu = new MainMenu();
 }
+
+void resetGame() {
+  stage = 1;
+  lives = 3;
+  player.bullets.clear();
+  if (prof != null) prof.bullets.clear();
+  taList.clear();
+  player.setPosition(WIDTH / 2, HEIGHT - 50);
+  setupStage();
+}
+
+
 
 void draw() {
-  background(255);
-
-  if (scene.equals("menu")) {
-    mainmenu.draw();
-  } else if (scene.equals("game")) {
-    playGame();
-  } else if (scene.equals("clear")) {
-    gameclear.draw();
-  } else if (scene.equals("over")) {
-    gameover.draw();
+  background(0);
+  switch (scene) {
+    case "menu": mainMenu.drawMenu(); break;
+    case "game": drawGame(); break;
+    case "game_over": drawGameOver(); break;
+    case "clear": drawGameClear(); break;
   }
 }
 
-void playGame() {
-  stage.update();
-  player.move();
-  player.update();
+void drawGame() {
+  if (timer > 0) timer--;
+  else { scene = "game_over"; return; }
   
-  for (Attack a : playerAttacks) a.move();
-  for (Attack a : enemyAttacks) a.move();
-  for (Enemy e : enemies) e.move();
-  for (TA t : tas) t.update();
+  player.handleMovement();
 
-  // 当たり判定
-  checkCollisions();
+  prof.update();
+  prof.fire();
+  prof.display();
+  prof.handleBullets();
 
-  stage.draw();
-  for (Enemy e : enemies) e.draw();
-  for (TA t : tas) t.draw();
-  for (Attack a : playerAttacks) a.draw();
-  for (Attack a : enemyAttacks) a.draw();
-  player.draw();
-  ui.draw();
-
-  // クリア・ゲームオーバー判定
-  if (stage.isCleared()) {
-    scene = "clear";
-  } else if (stage.isFailed() || player.lives <= 0) {
-    scene = "over";
-  }
-}
-
-void checkCollisions() {
-  // プレイヤーの弾が敵に当たる
-  for (int i = playerAttacks.size() - 1; i >= 0; i--) {
-    Attack a = playerAttacks.get(i);
-    for (Enemy e : enemies) {
-      if (a.isColliding(e)) {
-        e.hp -= 1;
-        playerAttacks.remove(i);
-        break;
+  // プレイヤーの弾更新・当たり判定
+  for (int i = player.bullets.size()-1; i >= 0; i--) {
+    Bullet b = player.bullets.get(i);
+    b.update();
+    b.display();
+    if (b.pos.y < 0) {
+      player.bullets.remove(i);
+      continue;
+    }
+    if (prof.isHit(b)) {
+      prof.damage();
+      player.bullets.remove(i);
+      if (prof.isDead()) {
+        stage++;
+        if (stage > 4) {
+          scene = "clear";
+        } else {
+          setupStage();
+        }
       }
     }
   }
 
-  // 敵の弾がプレイヤーに当たる
-  for (int i = enemyAttacks.size() - 1; i >= 0; i--) {
-    Attack a = enemyAttacks.get(i);
-    if (a.isColliding(player)) {
-      player.hit();
-      enemyAttacks.remove(i);
+  // 教授の弾でプレイヤー判定
+  for (int i = prof.bullets.size()-1; i >= 0; i--) {
+    Bullet b = prof.bullets.get(i);
+    if (dist(b.pos.x, b.pos.y, player.pos.x, player.pos.y) < 20) {
+      prof.bullets.remove(i);
+      lives--;
+      if (lives <= 0) {
+        scene = "game_over";
+        return;
+      }
     }
   }
 
-  // 敵のHPが0なら削除
-  for (int i = enemies.size() - 1; i >= 0; i--) {
-    if (enemies.get(i).hp <= 0) enemies.remove(i);
+  // TAの更新と弾処理
+  for (int i = taList.size()-1; i >= 0; i--) {
+    TA ta = taList.get(i);
+    ta.update(prof.pos.x);
+    ta.display();
+    ta.tryFire();
+
+    ArrayList<Bullet> bulletsToRemove = new ArrayList<>();
+    for (Bullet b : ta.bullets) {
+      b.update();
+      b.display();
+      if (b.pos.y > HEIGHT || dist(b.pos.x, b.pos.y, player.pos.x, player.pos.y) < 20) {
+        bulletsToRemove.add(b);
+        if (dist(b.pos.x, b.pos.y, player.pos.x, player.pos.y) < 20) {
+          lives--;
+          if (lives <= 0) {
+            scene = "game_over";
+            return;
+          }
+        }
+      }
+    }
+    ta.bullets.removeAll(bulletsToRemove);
+
+    if (ta.opacity <= 0) {
+      taList.remove(i);
+    }
   }
+
+  player.display();
+
+  drawUI();
 }
 
 void keyPressed() {
-  if (scene.equals("game")) {
-    if (key == ' ') {
-      player.shoot();
-    }
-    if (keyCode == UP) player.move("up");
-    if (keyCode == DOWN) player.move("down");
-    if (keyCode == LEFT) player.move("left");
-    if (keyCode == RIGHT) player.move("right");
-  }
-
-  if (scene.equals("menu")) {
-    mainmenu.handleInput(key);
-  }
-
-  if (scene.equals("clear") || scene.equals("over")) {
-    if (key == 'r') startGame();
+  if (scene.equals("game") && key == ' ') {
+    player.fire();
   }
 }
 
-void startGame() {
-  player = new Player();
-  enemies = new ArrayList<Enemy>();
-  playerAttacks = new ArrayList<Attack>();
-  enemyAttacks = new ArrayList<Attack>();
-  tas = new ArrayList<TA>();
-  stage = new Stage(difficulty);
-  ui.reset();
-  scene = "game";
+void mousePressed() {
+  if (scene.equals("menu")) {
+    mainMenu.checkClick(mouseX, mouseY);
+  }
+}
+
+
+// 追加でButtonクラスを入れる
+class Button {
+  String label;
+  float x, y, w, h;
+  int difficultyLevel;
+  Button(String label, float x, float y, float w, float h, int level) {
+    this.label = label;
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.difficultyLevel = level;
+  }
+
+  void display() {
+    fill(isHovered(mouseX, mouseY) ? 180 : 100);
+    rect(x, y, w, h);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(20);
+    text(label, x + w/2, y + h/2);
+  }
+
+  boolean isHovered(float mx, float my) {
+    return (mx > x && mx < x + w && my > y && my < y + h);
+  }
 }

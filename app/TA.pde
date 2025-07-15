@@ -1,41 +1,38 @@
 class TA {
-  float x, y;        
-  float opacity;     
-  boolean isActive;  
-  PImage image;       
+  int opacity;
+  PVector pos;
+  float speed;
+  ArrayList<Bullet> bullets;
+  PImage img;
 
-  TA(float x, float y, PImage img) {
-    this.x = x;
-    this.y = y;
-    this.image = img;
+  TA(int opacity, float x, float y, int bulletSpeed, PImage img) {
     this.opacity = 255;
-    this.isActive = true;
+    this.pos = new PVector(x, y);
+    this.speed = 2;
+    this.bullets = new ArrayList<Bullet>();
+    this.img = img;
   }
 
-  void update() {
-    if (isActive) {
-      fadeOut();
-    }
+  void update(float targetX) {
+    if (targetX > pos.x) pos.x += speed;
+    else pos.x -= speed;
+    opacity -= 1;
   }
 
-  void draw() {
-    if (isActive) {
+  void display() {
+    if (img != null) {
       tint(255, opacity);
-      imageMode(CENTER);
-      image(image, x, y);
+      image(img, pos.x - img.width/4, pos.y - img.height/4, img.width/2, img.height/2); // 縮小表示
       noTint();
+    } else {
+      fill(0, 255, 0, opacity);
+      ellipse(pos.x, pos.y, 30, 30);
     }
   }
 
-  void fadeOut() {
-    opacity -= 2;
-    if (opacity <= 0) {
-      isActive = false;
-      opacity = 0;
+  void tryFire() {
+    if (frameCount % 60 == 0) {
+      bullets.add(new Bullet(pos.x, pos.y + 10, 0, 4, color(0, 255, 0)));
     }
-  }
-
-  boolean isVisible() {
-    return isActive;
   }
 }

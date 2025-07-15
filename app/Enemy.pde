@@ -1,59 +1,77 @@
 class Enemy {
-  float x, y; 
-  int hp; 
-  String type; 
-  PImage image; 
-  float direction; 
-  float speed = 2;
-  ArrayList<Attack> attacks;
-  int shootCooldown; 
-  long lastShootTime = 0;
+  PVector pos;
+  float speed;
+  int hp;
+  int maxHP;
+  int fireInterval;
+  int bulletSpeed;
+  int direction = 1;
 
-  Enemy(float startX, float startY, String enemyType, int initialHp, String imagePath, int cooldown) {
-    x = startX;
-    y = startY;
-    type = enemyType; 
-    hp = initialHp; 
-    image = loadImage(imagePath); 
-    direction = 1; 
-    attacks = new ArrayList<Attack>();
-    shootCooldown = cooldown; 
+  ArrayList<Bullet> bullets = new ArrayList<>();
+  PImage enemyBulletImg;
+
+  Enemy(float x, float y, float speed, int hp, int fireInterval, int bulletSpeed) {
+    pos = new PVector(x, y);
+    this.speed = speed;
+    this.hp = hp;
+    this.maxHP = hp;
+    this.fireInterval = fireInterval;
+    this.bulletSpeed = bulletSpeed;
+  }
+
+  void loadImages() {
+    enemyBulletImg = loadImage("enemy_bull.png");
+  }
+
+  void fire() {
+    if (frameCount % fireInterval == 0 && enemyBulletImg != null) {
+      bullets.add(new Bullet(pos.x, pos.y + 20, 0, bulletSpeed, enemyBulletImg));
+    }
   }
 
   void update() {
-    move(); 
-    if (millis() - lastShootTime > shootCooldown) {
-      shoot(); 
-      lastShootTime = millis();
-    }
-    // 敵の攻撃を更新
-    for (int i = attacks.size() - 1; i >= 0; i--) {
-      Attack attack = attacks.get(i);
-      attack.move(); // [cite: 77]
-      if (attack.y > height) { // 画面外に出たら削除
-        attacks.remove(i);
+    pos.x += speed * direction;
+    if (pos.x > WIDTH - 30 || pos.x < 30) direction *= -1;
+  }
+
+  void handleBullets() {
+    for (int i = bullets.size() -1; i >= 0; i--) {
+      Bullet b = bullets.get(i);
+      b.update();
+      b.display();
+      if (b.pos.y > HEIGHT) {
+        bullets.remove(i);
       }
     }
   }
 
-  void move() { 
-    x += direction * speed;
-    if (x < image.width / 2 || x > width - image.width / 2) {
-      direction *= -1; // 壁に当たったら反転
+  void display() {
+    fill(255);
+    rect(pos.x - 20, pos.y - 20, 40, 40);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text(getLabel(), pos.x, pos.y);
+  }
+
+  String getLabel() {
+    switch(stage) {
+      case 1: return "必修";
+      case 2: return "選択必修";
+      case 3: return "選択";
+      case 4: return "卒研";
+      default: return "？";
     }
   }
 
-  void shoot() { ]
-    attacks.add(new Attack(x, y + image.height / 2, 5, "enemy", loadImage("report.png"))); // 下向きに発射
+  boolean isHit(Bullet b) {
+    return dist(b.pos.x, b.pos.y, pos.x, pos.y) < 20;
   }
 
-  void draw() { 
-    image(image, x - image.width / 2, y - image.height / 2);
+  void damage() {
+    hp--;
   }
 
-  boolean isHit(Attack attack) { 
-    // 敵と攻撃の衝突判定
-    return (attack.x > x - image.width / 2 && attack.x < x + image.width / 2 &&
-      attack.y > y - image.height / 2 && attack.y < y + image.height / 2);
+  boolean isDead() {
+    return hp <= 0;
   }
 }
