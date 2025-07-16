@@ -28,7 +28,7 @@ class Bullet {
   void display() {
   if (img != null) {
     float scale = 0.25;  // 通常の縮小率
-    if (img == mainBullImg) {  // mainBullImgはsetupなどでロードしたPImage
+    if (img == mainBullImg) { 
       scale = 0.1;  // main_bullだけもっと小さく表示する
     }
 
