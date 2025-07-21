@@ -85,6 +85,7 @@ void drawGame() {
         } else {
           setupStage();
         }
+        break;
       }
     }
   }
