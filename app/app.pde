@@ -9,6 +9,8 @@ Player player;
 Enemy prof;
 PImage taImg;
 PImage mainBullImg;
+PImage playerImg;
+PImage backgroundImg;
 
 ArrayList<TA> taList = new ArrayList<>();
 
@@ -18,6 +20,13 @@ int timer;
 
 MainMenu mainMenu;
 
+boolean leftPressed = false;
+boolean rightPressed = false;
+boolean upPressed = false;
+boolean downPressed = false;
+boolean spacePressed = false;
+
+
 void settings() {
   size(WIDTH, HEIGHT);
 }
@@ -25,11 +34,13 @@ void settings() {
 void setup() {
   size(WIDTH, HEIGHT);
   taImg = loadImage("TA.png");
+  backgroundImg = loadImage("classroom.jpg");
   mainBullImg = loadImage("main_bull.png");
+  playerImg = loadImage("player.png");
   PFont font = createFont("Meiryo", 20);
   textFont(font);
 
-  player = new Player(WIDTH/2, HEIGHT - 50);
+  player = new Player(WIDTH/2, HEIGHT - 50, playerImg);
   mainMenu = new MainMenu();
 }
 
@@ -56,6 +67,7 @@ void draw() {
 }
 
 void drawGame() {
+  image(backgroundImg, 0, 0, WIDTH, HEIGHT);
   if (timer > 0) timer--;
   else { scene = "game_over"; return; }
   
@@ -138,10 +150,22 @@ void drawGame() {
 }
 
 void keyPressed() {
-  if (scene.equals("game") && key == ' ') {
-    player.fire();
-  }
+  if (keyCode == LEFT) leftPressed = true;
+  if (keyCode == RIGHT) rightPressed = true;
+  if (keyCode == UP) upPressed = true;
+  if (keyCode == DOWN) downPressed = true;
+  if (key == ' ') spacePressed = true;
 }
+
+void keyReleased() {
+  if (keyCode == LEFT) leftPressed = false;
+  if (keyCode == RIGHT) rightPressed = false;
+  if (keyCode == UP) upPressed = false;
+  if (keyCode == DOWN) downPressed = false;
+  if (key == ' ') spacePressed = false;
+}
+
+
 
 void mousePressed() {
   if (scene.equals("menu")) {
