@@ -26,6 +26,12 @@ boolean upPressed = false;
 boolean downPressed = false;
 boolean spacePressed = false;
 
+import processing.sound.*;
+
+SoundFile bgm;
+SoundFile shootSound;
+SoundFile hitSound;
+SoundFile damagedSound;
 
 void settings() {
   size(WIDTH, HEIGHT);
@@ -33,6 +39,11 @@ void settings() {
 
 void setup() {
   size(WIDTH, HEIGHT);
+  bgm = new SoundFile(this, "bgm.mp3");
+  bgm.loop();
+  shootSound = new SoundFile(this, "shoot.mp3");
+  hitSound = new SoundFile(this, "enemy_damaged.mp3");
+  damagedSound = new SoundFile(this, "player_damaged.mp3");
   taImg = loadImage("TA.png");
   backgroundImg = loadImage("classroom.jpg");
   mainBullImg = loadImage("main_bull.png");
@@ -88,6 +99,7 @@ void drawGame() {
       continue;
     }
     if (prof.isHit(b)) {
+      hitSound.play();
       prof.damage();
       player.bullets.remove(i);
       if (prof.isDead()) {
@@ -108,6 +120,7 @@ void drawGame() {
     if (dist(b.pos.x, b.pos.y, player.pos.x, player.pos.y) < 20) {
       prof.bullets.remove(i);
       lives--;
+      damagedSound.play();
       if (lives <= 0) {
         scene = "game_over";
         return;
@@ -154,7 +167,10 @@ void keyPressed() {
   if (keyCode == RIGHT) rightPressed = true;
   if (keyCode == UP) upPressed = true;
   if (keyCode == DOWN) downPressed = true;
-  if (key == ' ') spacePressed = true;
+  if (key == ' '){
+    spacePressed = true;
+    shootSound.play();
+  }
 }
 
 void keyReleased() {
