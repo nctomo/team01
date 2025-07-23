@@ -4,6 +4,7 @@ final int HEIGHT = 400;
 String scene = "menu";
 int difficulty = 1;
 int stage = 1;
+int maxStage = 4;
 
 Player player;
 Enemy prof;
@@ -89,6 +90,8 @@ void drawGame() {
   prof.display();
   prof.handleBullets();
 
+
+
   // プレイヤーの弾更新・当たり判定
   for (int i = player.bullets.size()-1; i >= 0; i--) {
     Bullet b = player.bullets.get(i);
@@ -103,14 +106,25 @@ void drawGame() {
       prof.damage();
       player.bullets.remove(i);
       if (prof.isDead()) {
-        stage++;
-        if (stage > 4) {
-          scene = "clear";
-        } else {
-          setupStage();
-        }
-        break;
-      }
+  stage++;
+  if (stage > maxStage) {
+    // 次の課程に進む
+    if (maxStage == 4) {
+      maxStage = 6; // 修士に進む
+      stage = 5;
+      setupStage();
+    } else if (maxStage == 6) {
+      maxStage = 8; // 博士に進む
+      stage = 7;
+      setupStage();
+    } else {
+      scene = "clear"; // 博士課程をクリア
+    }
+  } else {
+    setupStage();
+  }
+}
+
     }
   }
 
