@@ -185,6 +185,14 @@ void keyPressed() {
     spacePressed = true;
     shootSound.play();
   }
+  switch(scene){
+    case "game_over":
+    if(keyCode == ENTER){
+      scene = "menu";
+    }
+    break;
+  }
+    
 }
 
 void keyReleased() {
